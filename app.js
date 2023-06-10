@@ -1,16 +1,16 @@
 import express from 'express';
 import bodyParser from 'body-parser';
+import bcrypt from 'bcrypt';
 import { graphqlHTTP } from 'express-graphql';
 import { buildSchema } from 'graphql';
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import { Event } from './models/eventModel.js';
+import { User } from './models/userModel.js';
 
 const app = express();
 
 app.use(bodyParser.json());
-
-const events = [];
 
 dotenv.config({ path: './config.env' });
 
@@ -18,6 +18,12 @@ app.use(
   '/graphql',
   graphqlHTTP({
     schema: buildSchema(`
+        type User {
+          _id: ID!
+          email: String!
+          password: String
+        }
+
         type Event {
           _id: ID!
           title: String!
@@ -33,12 +39,18 @@ app.use(
           date: String!
         }
 
+        input UserInput {
+          email: String!
+          password: String!
+        }
+
         type RootQuery {
           events: [Event!]!
         }
 
         type RootMutation {
           createEvent(eventInput: EventInput): Event
+          createUser(userInput: UserInput): User
         }
 
         schema {
@@ -51,27 +63,54 @@ app.use(
         return await Event.find();
       },
       createEvent: async (args) => {
-        const { title, description, price, date } = args.eventInput;
+        try {
+          const { title, description, price, date } = args.eventInput;
 
-        const newEvent = await Event.create({
-          title,
-          description,
-          price: +price,
-          date: new Date(date),
-        });
+          const newEvent = await Event.create({
+            title,
+            description,
+            price: +price,
+            date: new Date(date),
+            creator: '6484106f9e725284caac61fe',
+          });
 
-        return newEvent;
+          const eventCreator = await User.findById(newEvent.creator);
 
-        // return newEvent
-        //   .save()
-        //   .then((result) => {
-        //     console.log(result);
-        //     return { ...result._doc };
-        //   })
-        //   .catch((err) => {
-        //     console.log(err);
-        //     throw err;
-        //   });
+          if (!eventCreator) {
+            throw new Error('User not found!');
+          }
+
+          eventCreator.createdEvents.push(newEvent);
+          await eventCreator.save();
+
+          return newEvent;
+        } catch (error) {
+          throw error;
+        }
+      },
+      createUser: async (args) => {
+        // Checking if user with the exact same email is already created
+        try {
+          const { email, password } = args.userInput;
+          const possibleUser = await User.findOne({ email });
+
+          if (possibleUser) {
+            throw new Error('User exists already.');
+          }
+
+          const hashedPassword = await bcrypt.hash(password, 12);
+
+          const newUser = await User.create({
+            email,
+            password: hashedPassword,
+          });
+
+          console.log(newUser);
+
+          return { email: newUser.email, password: null };
+        } catch (error) {
+          throw error;
+        }
       },
     }, // all resolver functions (they need to match our schema endpoints by name)
     graphiql: true,
