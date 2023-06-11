@@ -7,6 +7,7 @@ import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import { Event } from './models/eventModel.js';
 import { User } from './models/userModel.js';
+import { getUser } from './utils/getUser.js';
 
 const app = express();
 
@@ -22,6 +23,7 @@ app.use(
           _id: ID!
           email: String!
           password: String
+          createdEvents: [Event!]
         }
 
         type Event {
@@ -30,6 +32,7 @@ app.use(
           description: String!
           price: Float!
           date: String!
+          creator: User!
         }
 
         input EventInput {
@@ -60,7 +63,12 @@ app.use(
     `),
     rootValue: {
       events: async () => {
-        return await Event.find();
+        const events = await Event.find();
+
+        return events.map((event) => ({
+          ...event._doc,
+          creator: getUser.bind(this, event._doc.creator),
+        }));
       },
       createEvent: async (args) => {
         try {
@@ -88,6 +96,7 @@ app.use(
           throw error;
         }
       },
+
       createUser: async (args) => {
         // Checking if user with the exact same email is already created
         try {
