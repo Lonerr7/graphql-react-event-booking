@@ -11,6 +11,7 @@ export const getEvents = async (eventIds) => {
 
     return events.map((event) => ({
       ...event._doc,
+      date: event._doc.date.toLocaleString(undefined, { dateStyle: 'short' }),
       creator: getUser.bind(this, event._doc.creator),
     }));
   } catch (error) {
