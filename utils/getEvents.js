@@ -18,3 +18,16 @@ export const getEvents = async (eventIds) => {
     throw error;
   }
 };
+
+export const getSingleEvent = async (eventId) => {
+  try {
+    const event = await Event.findById(eventId);
+
+    return {
+      ...event._doc,
+      creator: getUser.bind(this, event._doc.creator),
+    };
+  } catch (error) {
+    throw error;
+  }
+};
