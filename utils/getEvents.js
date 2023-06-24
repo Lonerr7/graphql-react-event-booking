@@ -1,5 +1,5 @@
 import { Event } from '../models/eventModel.js';
-import { getUser } from './getUser.js';
+import { transformEvent } from './transformEvent.js';
 
 export const getEvents = async (eventIds) => {
   try {
@@ -9,11 +9,7 @@ export const getEvents = async (eventIds) => {
       throw new Error('No events found!');
     }
 
-    return events.map((event) => ({
-      ...event._doc,
-      date: event._doc.date.toLocaleString(undefined, { dateStyle: 'short' }),
-      creator: getUser.bind(this, event._doc.creator),
-    }));
+    return events.map((event) => transformEvent(event));
   } catch (error) {
     throw error;
   }
@@ -23,10 +19,7 @@ export const getSingleEvent = async (eventId) => {
   try {
     const event = await Event.findById(eventId);
 
-    return {
-      ...event._doc,
-      creator: getUser.bind(this, event._doc.creator),
-    };
+    return transformEvent(event);
   } catch (error) {
     throw error;
   }
