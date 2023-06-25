@@ -8,8 +8,12 @@ export const eventsResolver = {
 
     return events.map((event) => transformEvent(event));
   },
-  createEvent: async (args) => {
+  createEvent: async (args, req) => {
     try {
+      if (!req.isAuth) {
+        throw new Error('Unauthenticated!');
+      }
+
       const { title, description, price, date } = args.eventInput;
 
       const newEvent = await Event.create({

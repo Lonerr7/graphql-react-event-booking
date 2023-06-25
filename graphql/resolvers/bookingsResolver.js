@@ -4,8 +4,12 @@ import { transformBooking } from '../../utils/transformBooking.js';
 import { transformEvent } from '../../utils/transformEvent.js';
 
 export const bookingsResolver = {
-  bookings: async () => {
+  bookings: async (_, req) => {
     try {
+      if (!req.isAuth) {
+        throw new Error('Unauthenticated!');
+      }
+
       const bookings = await Booking.find();
 
       return bookings.map((booking) => transformBooking(booking));
@@ -13,8 +17,12 @@ export const bookingsResolver = {
       throw error;
     }
   },
-  bookEvent: async ({ eventId }) => {
+  bookEvent: async ({ eventId }, req) => {
     try {
+      if (!req.isAuth) {
+        throw new Error('Unauthenticated!');
+      }
+
       const { _id } = await Event.findById(eventId);
 
       if (!_id) {
@@ -31,8 +39,12 @@ export const bookingsResolver = {
       throw error;
     }
   },
-  cancelBooking: async ({ bookingId }) => {
+  cancelBooking: async ({ bookingId }, req) => {
     try {
+      if (!req.isAuth) {
+        throw new Error('Unauthenticated!');
+      }
+
       const bookingWithEvent = await Booking.findById(bookingId).populate(
         'event'
       );

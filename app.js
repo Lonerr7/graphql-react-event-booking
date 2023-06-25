@@ -5,6 +5,7 @@ import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import { graphqlSchema } from './graphql/schema/graphqlSchema.js';
 import { rootResolver } from './graphql/resolvers/rootResolver.js';
+import { isAuth } from './middleware/is-auth.js';
 
 const app = express();
 
@@ -12,6 +13,7 @@ app.use(bodyParser.json());
 
 dotenv.config({ path: './config.env' });
 
+app.use(isAuth);
 app.use(
   '/graphql',
   graphqlHTTP({
